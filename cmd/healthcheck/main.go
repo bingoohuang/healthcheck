@@ -63,12 +63,12 @@ func (a *app) prepareAddrs() {
 		}
 
 		lines := strings.Split(string(b), "\n")
-		a.addrs = addAddr(lines, a.addrs)
+		a.addAddr(lines)
 	}
 
 	if a.addrList != "" {
 		lines := strings.Fields(a.addrList)
-		a.addrs = addAddr(lines, a.addrs)
+		a.addAddr(lines)
 	}
 }
 
@@ -117,20 +117,19 @@ func (a *app) waitResults() {
 	}
 }
 
-func addAddr(lines []string, addrs []string) []string {
+func (a *app) addAddr(lines []string) {
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
 
-		if contains(addrs, line) {
+		if contains(a.addrs, line) {
 			fmt.Printf("duplicate address %s\n", line)
 		} else {
-			addrs = append(addrs, line)
+			a.addrs = append(a.addrs, line)
 		}
 	}
-	return addrs
 }
 
 func (a *app) tcpCheck(addr string) {
