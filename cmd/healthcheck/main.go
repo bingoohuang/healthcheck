@@ -7,6 +7,8 @@ import (
 	"net"
 	"strings"
 	"time"
+
+	"github.com/mitchellh/go-homedir"
 )
 
 type Result struct {
@@ -14,7 +16,27 @@ type Result struct {
 	Err  error
 }
 
+type app struct {
+	addrListFileName string
+	addrList         string
+	dialTimeout      time.Duration
+
+	addrs []string
+
+	okChan, errChan chan Result
+	oks, errs       []Result
+}
+
 func main() {
+	ap := app{}
+	ap.parseFlags()
+	ap.prepareAddrs()
+	ap.goTcpCheck()
+	ap.waitResults()
+	ap.printResult()
+}
+
+func (a *app) parseFlags() {
 	addrListFileName := flag.String("f", "", "address file name(ip:port per line)")
 	addrList := flag.String("a", "", "address list (format ip:port ip:port)")
 	timeout := flag.String("t", "3s", "connect timeout(default 3s)")
@@ -25,59 +47,72 @@ func main() {
 		panic(err)
 	}
 
-	addrs := make([]string, 0)
-	if *addrListFileName != "" {
-		b, err := ioutil.ReadFile(*addrListFileName)
+	a.addrListFileName = *addrListFileName
+	a.addrList = *addrList
+	a.dialTimeout = dialTimeout
+}
+
+func (a *app) prepareAddrs() {
+	a.addrs = make([]string, 0)
+
+	if a.addrListFileName != "" {
+		expanded, _ := homedir.Expand(a.addrListFileName)
+		b, err := ioutil.ReadFile(expanded)
 		if err != nil {
 			panic(err)
 		}
 
 		lines := strings.Split(string(b), "\n")
-		addrs = addAddr(lines, addrs)
+		a.addrs = addAddr(lines, a.addrs)
 	}
 
-	if *addrList != "" {
-		lines := strings.Fields(*addrList)
-		addrs = addAddr(lines, addrs)
+	if a.addrList != "" {
+		lines := strings.Fields(a.addrList)
+		a.addrs = addAddr(lines, a.addrs)
 	}
+}
 
-	okChan := make(chan string)
-	errChan := make(chan Result)
-
-	for _, addr := range addrs {
-		go tcpCheck(addr, okChan, errChan, dialTimeout)
+func (a *app) goTcpCheck() {
+	a.okChan = make(chan Result)
+	a.errChan = make(chan Result)
+	for _, addr := range a.addrs {
+		go a.tcpCheck(addr)
 	}
+}
 
-	okAddrs := make([]string, 0)
-	errAddrs := make([]Result, 0)
-
-	cnt := len(addrs)
-	for cnt > 0 {
-		select {
-		case addr := <-okChan:
-			okAddrs = append(okAddrs, addr)
-			cnt--
-		case err := <-errChan:
-			errAddrs = append(errAddrs, err)
-			cnt--
-		}
-	}
-
-	total := len(addrs)
-
-	if len(errAddrs) > 0 {
-		fmt.Printf("Total failed %d/%d :\n", len(errAddrs), total)
-		for _, addr := range errAddrs {
+func (a *app) printResult() {
+	total := len(a.oks) + len(a.errs)
+	if len(a.errs) > 0 {
+		fmt.Printf("Failed %d/%d:\n", len(a.errs), total)
+		for _, addr := range a.errs {
 			fmt.Printf("%s, error %v\n", addr.Addr, addr.Err)
 		}
-
-		fmt.Printf("\n\n")
 	}
 
-	if len(okAddrs) > 0 {
-		fmt.Printf("Total ok %d/%d:\n", len(okAddrs), total)
-		for _, addr := range okAddrs {
-			fmt.Printf("%s\n", addr)
+	if len(a.oks) > 0 {
+		if len(a.errs) > 0 {
+			fmt.Printf("\n")
+		}
+
+		fmt.Printf("OK %d/%d:\n", len(a.oks), total)
+		for _, ok := range a.oks {
+			fmt.Printf("%s\n", ok.Addr)
+		}
+	}
+}
+
+func (a *app) waitResults() {
+	a.oks = make([]Result, 0)
+	a.errs = make([]Result, 0)
+	cnt := len(a.addrs)
+	for cnt > 0 {
+		select {
+		case ok := <-a.okChan:
+			a.oks = append(a.oks, ok)
+			cnt--
+		case err := <-a.errChan:
+			a.errs = append(a.errs, err)
+			cnt--
 		}
 	}
 }
@@ -98,13 +133,13 @@ func addAddr(lines []string, addrs []string) []string {
 	return addrs
 }
 
-func tcpCheck(addr string, okChan chan string, errChan chan Result, timeout time.Duration) {
-	conn, err := net.DialTimeout("tcp", addr, timeout)
+func (a *app) tcpCheck(addr string) {
+	conn, err := net.DialTimeout("tcp", addr, a.dialTimeout)
 	if err == nil {
-		okChan <- addr
 		_ = conn.Close()
+		a.okChan <- Result{addr, err}
 	} else {
-		errChan <- Result{addr, err}
+		a.errChan <- Result{addr, err}
 	}
 }
 
