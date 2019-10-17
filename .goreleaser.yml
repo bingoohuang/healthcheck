@@ -7,7 +7,10 @@ before:
     # you may remove this if you don't need go generate
     - go generate ./...
 builds:
-  - main: ./cmd/healthcheck/main.go
+  -
+    main: ./cmd/healthcheck/main.go
+    hooks:
+      post: ./upx.sh
 env:
   - CGO_ENABLED=0
 archives:
