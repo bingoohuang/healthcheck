@@ -10,7 +10,7 @@ import (
 func main() {
 	ap := app{addrs: healthcheck.NewAddresses()}
 	ap.parseFlags()
-	ap.goTcpCheck()
+	ap.goTCPCheck()
 }
 
 type app struct {
@@ -30,11 +30,11 @@ func (a *app) parseFlags() {
 	a.addrs.PrepareAddress(*addrListFileName, *addrList)
 }
 
-func (a *app) goTcpCheck() {
-	checker := healthcheck.TcpChecker{Timeout: a.dialTimeout}
+func (a *app) goTCPCheck() {
+	checker := healthcheck.TCPChecker{Timeout: a.dialTimeout}
 
 	a.result = healthcheck.NewResult()
-	checker.TcpCheckSlice(a.addrs, a.result)
+	checker.CheckSlice(a.addrs, a.result)
 
 	results := a.result.WaitResults(a.addrs.Len())
 	results.PrintResult()
