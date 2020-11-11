@@ -13,3 +13,4 @@
 /.idea
 /dist/
 testdata/metrics
+/healthcheck

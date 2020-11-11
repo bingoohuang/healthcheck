@@ -59,7 +59,8 @@ func (a *app) intervalCheck(checker healthcheck.TCPChecker) {
 	for {
 		for _, addr := range a.addrs {
 			keys := []string{DefaultTo(addr.Desc, "HealthCheck")}
-			keys = append(keys, strings.SplitN(addr.Addr, ":", 2)...)
+			addr_ := strings.ReplaceAll(addr.Addr, ".", "_")
+			keys = append(keys, strings.SplitN(addr_, ":", 2)...)
 
 			qps := metric.QPS(keys...)
 			succRate := metric.SuccessRate(keys...)
