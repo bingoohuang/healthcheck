@@ -11,10 +11,10 @@ type TCPChecker struct {
 }
 
 // CheckSlice checks a slice of addresses.
-func (t *TCPChecker) CheckSlice(addresses []string, result ResultChan) {
+func (t *TCPChecker) CheckSlice(addresses []Address, result ResultChan) {
 	for _, address := range addresses {
-		go func(ad string) {
-			if err := t.Check(ad); err == nil {
+		go func(ad Address) {
+			if err := t.Check(ad.Addr); err == nil {
 				result.OKChan <- ResultItem{Address: ad}
 			} else {
 				result.ErrorChan <- ResultItem{Address: ad, Error: err}
