@@ -65,8 +65,12 @@ func (r *ResultChan) WaitResults(totalItems int) Result {
 
 // PrintResult prints result.
 func (a *Result) PrintResult() {
-	fmt.Printf("OK %d/%d:\n", len(a.OKItems), a.TotalItems)
-	fmt.Printf("Failed %d/%d:\n", len(a.ErrorItems), a.TotalItems)
+	if len(a.OKItems) > 0 {
+		fmt.Printf("OK %d/%d\n", len(a.OKItems), a.TotalItems)
+	}
+	if len(a.ErrorItems) > 0 {
+		fmt.Printf("Failed %d/%d\n", len(a.ErrorItems), a.TotalItems)
+	}
 
 	if len(a.ErrorItems) > 0 {
 		fmt.Printf("Failed Items:\n")

@@ -53,6 +53,7 @@ func (a *app) intervalCheck(checker healthcheck.TCPChecker) {
 		return
 	}
 
+	metric.Start()
 	ticker := time.NewTicker(a.interval)
 	defer ticker.Stop()
 
