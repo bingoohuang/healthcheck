@@ -81,3 +81,7 @@ OK 1/3:
     {"time":"20201111143325000","key":"测试机2#192_168_126_18#22","hostname":"bingoobjcadeMacBook-Pro.local","logtype":"SUCCESS_RATE","v1":1,"v2":1,"min":100,"max":100}
     {"time":"20201111143325000","key":"测试机2#192_168_126_18#22","hostname":"bingoobjcadeMacBook-Pro.local","logtype":"QPS","v1":1,"v2":0,"min":-1,"max":-1}
     ```
+
+## Resouces
+
+1. [areyouok](https://github.com/Bhupesh-V/areyouok) A fast and easy to use URL health checker ⛑️ Keep your links healthy during tough times (Out of box support for GitHub Actions)
